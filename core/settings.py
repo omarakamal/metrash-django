@@ -26,7 +26,6 @@ ALLOWED_HOSTS = ["*"]
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-iia^$2+!jgl83d7#22kc5=#x3b7-8tj11%vj49v^r0gkf-mw6t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -35,6 +34,7 @@ DEBUG = True
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+SECRET_KEY = env("SECRET_KEY")
 
 
 # Application definition
@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
+    env("FRONTEND_URL"),
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
