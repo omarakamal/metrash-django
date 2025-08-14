@@ -19,7 +19,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ALLOWED_HOSTS = ["*"]
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -36,6 +36,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env("SECRET_KEY")
 
+ALLOWED_HOSTS = [env("FRONTEND_URL"),'localhost','127.0.0.1']
 
 # Application definition
 
@@ -51,9 +52,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "corsheaders",
+    # 'rest_framework_simplejwt.token_blacklist',  # needed if you want logout/blacklist
+
 
     # Local
     "shop",
+
 ]
 
 
@@ -70,13 +74,38 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
+# CORS (only your frontends)
 CORS_ALLOWED_ORIGINS = [
     env("FRONTEND_URL"),
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+CORS_ALLOW_CREDENTIALS = False  # set True only if you actually use cookies across sites
+
+
+
+# HTTPS / proxy
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = False
+
+
+# HSTS & secure headers
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+# SECURE_BROWSER_XSS_FILTER = True
+
+
+# CSRF / cookies (safe defaults even if you aren't using cookies)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None"
+
 
 
 
@@ -152,8 +181,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
+
+# Static files (WhiteNoise)
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -173,9 +206,24 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
     ),
+  "DEFAULT_THROTTLE_CLASSES": [
+    "rest_framework.throttling.AnonRateThrottle",
+    "rest_framework.throttling.UserRateThrottle",
+    "rest_framework.throttling.ScopedRateThrottle",
+  ],
+  "DEFAULT_THROTTLE_RATES": {
+    "anon": "60/min", "user": "240/min",
+    "login": "5/min", "refresh": "12/min",
+    "password_reset": "3/hour", "signup": "3/hour",
+  },
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # to mirror Node (30m)
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+  "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+  "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+  "ROTATE_REFRESH_TOKENS": True,
+#   "BLACKLIST_AFTER_ROTATION": True,
+  "UPDATE_LAST_LOGIN": True,
 }
+# if DEBUG:
+#     SECURE_SSL_REDIRECT = False
